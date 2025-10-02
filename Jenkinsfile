@@ -9,7 +9,8 @@ pipeline {
 
     environment {
         ARTIFACT_NAME = "myapp-${env.BUILD_NUMBER}.jar"
-        SLACK_CHANNEL = '#ci-alerts'
+        MAVEN_HOME = "/opt/homebrew/Cellar/maven/3.9.11/libexec"
+        PATH = "${MAVEN_HOME}/bin:${env.PATH}"
     }
 
     stages {
@@ -22,17 +23,14 @@ pipeline {
 
         stage('Build') {
             steps {
-                script {
-                    sh 'mvn clean package -DskipTests'
-                }
+                sh "mvn -v"  // sanity check Maven version
+                sh "mvn clean package -DskipTests"
             }
         }
 
         stage('Test') {
             steps {
-                script {
-                    sh 'mvn test'
-                }
+                sh "mvn test"
             }
             post {
                 always {
@@ -54,8 +52,8 @@ pipeline {
             }
             steps {
                 echo "Deploying ${env.ARTIFACT_NAME} to staging environment..."
-                // Example: Docker build + push
-                // sh 'docker build -t myapp:${BUILD_NUMBER} .'
+                // Example deployment command
+                // sh 'docker build -t myrepo/myapp:${BUILD_NUMBER} .'
                 // sh 'docker push myrepo/myapp:${BUILD_NUMBER}'
             }
         }
@@ -64,11 +62,9 @@ pipeline {
     post {
         success {
             echo "✅ Build #${env.BUILD_NUMBER} succeeded!"
-            // slackSend(channel: env.SLACK_CHANNEL, message: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}")
         }
         failure {
             echo "❌ Build #${env.BUILD_NUMBER} failed!"
-            // slackSend(channel: env.SLACK_CHANNEL, message: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}")
         }
     }
 }
